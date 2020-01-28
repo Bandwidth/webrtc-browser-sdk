@@ -1,0 +1,27 @@
+{
+  "name": "@bandwidth/webrtc-browser-sdk",
+  "version": "1.0.0",
+  "description": "SDK for Bandwidth WebRTC Browser Applications",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "./node_modules/typescript/bin/tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bandwidth/webrtc-browser-sdk.git"
+  },
+  "author": "edge-services@bandwidth.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Bandwidth/webrtc-browser-sdk/issues"
+  },
+  "homepage": "https://github.com/Bandwidth/webrtc-browser-sdk#readme",
+  "devDependencies": {
+    "typescript": "3.7.5"
+  },
+  "dependencies": {
+    "@types/node": "^12.0.3",
+    "rpc-websockets": "^5.0.9"
+  }
+}
