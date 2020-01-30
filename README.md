@@ -3,7 +3,7 @@
 ## Initialize the Bandwidth WebRTC SDK
 
 ```javascript
-import BandwidthRtc from "@bandwidth/bandwidth-rtc-sdk-client";
+import BandwidthRtc from "@bandwidth/webrtc-browser-sdk";
 
 const bandwidthRtc = new BandwidthRtc();
 ```
