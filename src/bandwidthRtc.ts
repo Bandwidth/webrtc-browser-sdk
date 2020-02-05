@@ -1,3 +1,4 @@
+require("webrtc-adapter");
 import {
   RtcAuthParams,
   RtcOptions,
