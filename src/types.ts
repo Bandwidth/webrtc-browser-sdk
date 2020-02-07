@@ -35,7 +35,7 @@ export interface SubscriptionEvent {
   streamId: string;
 }
 
-export interface UnpublishEvent {
+export interface UnpublishedEvent {
   streamId: string;
 }
 

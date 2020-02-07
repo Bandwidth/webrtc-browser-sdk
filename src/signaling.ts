@@ -1,3 +1,5 @@
+//@ts-ignore
+import { version } from "../package.json";
 import { EventEmitter } from "events";
 import { Client as JsonRpcClient } from "rpc-websockets";
 import {
@@ -25,7 +27,7 @@ class Signaling extends EventEmitter {
         rtcOptions = { ...rtcOptions, ...options };
       }
 
-      const websocketUrl = `${rtcOptions.websocketUrl}/v1/?at=d&conferenceId=${authParams.conferenceId}&participantId=${authParams.participantId}`;
+      const websocketUrl = `${rtcOptions.websocketUrl}/v1/?at=d&conferenceId=${authParams.conferenceId}&participantId=${authParams.participantId}&version=${version}`;
 
       const ws = new JsonRpcClient(websocketUrl, {
         max_reconnects: 0 // Unlimited
@@ -33,8 +35,9 @@ class Signaling extends EventEmitter {
       this.ws = ws;
 
       ws.addListener("subscribe", event => this.emit("subscribe", event));
-      ws.addListener("unsubscribe", event => this.emit("unsubscribe", event));
-      ws.addListener("unpublish", event => this.emit("unpublish", event));
+      ws.addListener("unsubscribed", event => this.emit("unsubscribed", event));
+      ws.addListener("unpublished", event => this.emit("unpublished", event));
+      ws.addListener("removed", () => this.emit("removed"));
       ws.addListener("onIceCandidate", event =>
         this.emit("onIceCandidate", event)
       );
