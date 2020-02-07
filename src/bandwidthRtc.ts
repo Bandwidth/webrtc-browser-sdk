@@ -331,7 +331,7 @@ class BandwidthRtc {
 
   private cleanupRemoteStreams(...streams: string[]) {
     if (streams.length === 0) {
-      streams = Array.from(this.localStreams.keys());
+      streams = Array.from(this.remotePeerConnections.keys());
     }
 
     for (const s of streams) {
