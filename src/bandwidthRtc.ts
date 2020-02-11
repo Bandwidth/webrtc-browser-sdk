@@ -4,7 +4,7 @@ import {
   RtcOptions,
   OnIceCandidateEvent,
   SubscriptionEvent,
-  UnpublishEvent,
+  UnpublishedEvent,
   MediaType,
   SdpOfferRejectedError,
   MessageReceivedEvent,
@@ -38,8 +38,8 @@ class BandwidthRtc {
   // Event handlers
   subscribedHandler?: { (event: RtcStream): void };
   unsubscribedHandler?: { (event: SubscriptionEvent): void };
-  unpublishedHandler?: { (event: UnpublishEvent): void };
-  conferenceEndedHandler?: { (): void };
+  unpublishedHandler?: { (event: UnpublishedEvent): void };
+  removedHandler?: { (): void };
   messageReceivedHandler?: { (message: MessageReceivedEvent): void };
 
   constructor() {
@@ -59,12 +59,16 @@ class BandwidthRtc {
       this.handleSubscribeEvent.bind(this)
     );
     this.signaling.addListener(
-      "unsubscribe",
-      this.handleUnsubscribeEvent.bind(this)
+      "unsubscribed",
+      this.handleUnsubscribedEvent.bind(this)
     );
     this.signaling.addListener(
-      "unpublish",
-      this.handleUnpublishEvent.bind(this)
+      "unpublished",
+      this.handleUnpublishedEvent.bind(this)
+    );
+    this.signaling.addListener(
+      "removed",
+      this.handleRemovedEvent.bind(this)
     );
     return this.signaling.connect(authParams, options);
   }
@@ -157,38 +161,45 @@ class BandwidthRtc {
     this.remoteDataChannels.set(streamId, remoteDataChannel);
   }
 
-  private async handleUnsubscribeEvent(notification: SubscriptionEvent) {
+  private handleUnsubscribedEvent(notification: SubscriptionEvent) {
     const streamId = notification.streamId;
-    const rtcPeerConnection = this.remotePeerConnections.get(streamId);
-    if (rtcPeerConnection) {
-      rtcPeerConnection.close();
-    }
-    this.remotePeerConnections.delete(streamId);
-    this.remoteDataChannels.delete(streamId);
+    this.cleanupRemoteStreams(streamId);
     if (this.unsubscribedHandler) {
       this.unsubscribedHandler(notification);
     }
   }
 
-  private async handleUnpublishEvent(notification: UnpublishEvent) {
+  private handleUnpublishedEvent(notification: UnpublishedEvent) {
     const streamId = notification.streamId;
-    await this.unpublish(streamId);
+    this.cleanupLocalStreams(streamId);
+    if (this.unpublishedHandler) {
+      this.unpublishedHandler(notification);
+    }
+  }
+
+  private handleRemovedEvent() {
+    this.cleanupLocalStreams();
+    this.cleanupRemoteStreams();
+    this.signaling.disconnect();
+    if (this.removedHandler) {
+      this.removedHandler();
+    }
   }
 
   onSubscribe(callback: { (event: RtcStream): void }): void {
     this.subscribedHandler = callback;
   }
 
-  onUnsubscribe(callback: { (event: SubscriptionEvent): void }): void {
+  onUnsubscribed(callback: { (event: SubscriptionEvent): void }): void {
     this.unsubscribedHandler = callback;
   }
 
-  onUnpublish(callback: { (event: UnpublishEvent): void }): void {
+  onUnpublished(callback: { (event: UnpublishedEvent): void }): void {
     this.unpublishedHandler = callback;
   }
 
-  onConferenceEnded(callback: { (): void }): void {
-    this.conferenceEndedHandler = callback;
+  onRemoved(callback: { (): void }): void {
+    this.removedHandler = callback;
   }
 
   onMessageReceived(callback: { (message: MessageReceivedEvent): void }): void {
@@ -288,27 +299,49 @@ class BandwidthRtc {
     }
   }
 
-  async unpublish(streamId?: string | string[]) {
-    let streams: string[] = [];
-    if (streamId) {
-      if (typeof streamId === "string") {
-        streams[0] = streamId;
-      } else if (streamId instanceof Array) {
-        streams = streamId;
-      }
-    } else {
+  async unpublish(...streams: string[]) {
+    if (streams.length === 0) {
       streams = Array.from(this.localStreams.keys());
     }
+
     for (const s of streams) {
       await this.signaling.unpublish(s);
+      this.cleanupLocalStreams(s);
+    }
+  }
+
+  private cleanupLocalStreams(...streams: string[]) {
+    if (streams.length === 0) {
+      streams = Array.from(this.localStreams.keys());
+    }
+
+    for (const s of streams) {
       this.stopLocalMedia(s);
       this.localStreams.delete(s);
+
       const localPeerConnection = this.localPeerConnections.get(s);
       localPeerConnection?.close();
       this.localPeerConnections.delete(s);
+
       const localDataChannel = this.localDataChannels.get(s);
       localDataChannel?.close();
       this.localDataChannels.delete(s);
+    }
+  }
+
+  private cleanupRemoteStreams(...streams: string[]) {
+    if (streams.length === 0) {
+      streams = Array.from(this.remotePeerConnections.keys());
+    }
+
+    for (const s of streams) {
+      const remotePeerConnection = this.remotePeerConnections.get(s);
+      remotePeerConnection?.close();
+      this.remotePeerConnections.delete(s);
+
+      const remoteDataChannel = this.remoteDataChannels.get(s);
+      remoteDataChannel?.close();
+      this.remoteDataChannels.delete(s);
     }
   }
 

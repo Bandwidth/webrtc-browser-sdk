@@ -86,9 +86,18 @@ Please see the following resources for more information on MediaStreamConstraint
 
 ## Event Listeners
 
+### onUnpublished
+
+- Description: Listens for the unpublished event.
+```javascript
+bandwidthRtc.onUnpublished(event => {
+  console.log(`The stream ${event.streamId} has been unpublished.`);
+});
+```
+
 ### onSubscribe
 
-- Description: Listens for the subscribe event and execute provided callback.
+- Description: Listens for the subscribe event.
 
 ```javascript
 bandwidthRtc.onSubscribe(event => {
@@ -96,13 +105,22 @@ bandwidthRtc.onSubscribe(event => {
 });
 ```
 
-### onUnsubscribe
+### onUnsubscribed
 
-- Descripton: Listens for the unsubscribe event.
+- Descripton: Listens for the unsubscribed event.
 
 ```javascript
-bandwidthRtc.onUnsubscribe(event => {
+bandwidthRtc.onUnsubscribed(event => {
   console.log(`The stream ${event.streamId} has been unsubscribed from.`);
+});
+```
+
+### onRemoved
+
+- Description: Listens for the removed from conference event.
+```javascript
+bandwidth.onRemoved(event => {
+  console.log(`Participant ${event.participantId} has been removed from the conference.`);
 });
 ```
 
