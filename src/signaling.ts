@@ -1,4 +1,4 @@
-const version = require("../package.json").version;
+const sdkVersion = require("../package.json").version;
 import { EventEmitter } from "events";
 import { Client as JsonRpcClient } from "rpc-websockets";
 import {
@@ -26,7 +26,7 @@ class Signaling extends EventEmitter {
         rtcOptions = { ...rtcOptions, ...options };
       }
 
-      const websocketUrl = `${rtcOptions.websocketUrl}/v1/?at=d&conferenceId=${authParams.conferenceId}&participantId=${authParams.participantId}&version=${version}`;
+      const websocketUrl = `${rtcOptions.websocketUrl}/v1/?at=d&conferenceId=${authParams.conferenceId}&participantId=${authParams.participantId}&sdkVersion=${sdkVersion}`;
 
       const ws = new JsonRpcClient(websocketUrl, {
         max_reconnects: 0 // Unlimited
