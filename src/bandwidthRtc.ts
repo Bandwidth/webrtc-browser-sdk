@@ -5,9 +5,10 @@ import {
   OnIceCandidateEvent,
   SubscriptionEvent,
   UnpublishedEvent,
+  MediaServerResetEvent,
+  MessageReceivedEvent,
   MediaType,
   SdpOfferRejectedError,
-  MessageReceivedEvent,
   RtcStream
 } from "./types";
 import Signaling from "./signaling";
@@ -40,6 +41,7 @@ class BandwidthRtc {
   unsubscribedHandler?: { (event: SubscriptionEvent): void };
   unpublishedHandler?: { (event: UnpublishedEvent): void };
   removedHandler?: { (): void };
+  mediaServerResetHandler?: { (event: MediaServerResetEvent): void };
   messageReceivedHandler?: { (message: MessageReceivedEvent): void };
 
   constructor() {
@@ -70,6 +72,10 @@ class BandwidthRtc {
       "removed",
       this.handleRemovedEvent.bind(this)
     );
+    this.signaling.addListener(
+      "mediaServerReset",
+      this.handleMediaServerResetEvent.bind(this)
+    )
     return this.signaling.connect(authParams, options);
   }
 
@@ -79,6 +85,7 @@ class BandwidthRtc {
       const rtcPeerConnection =
         this.remotePeerConnections.get(streamId) ||
         this.localPeerConnections.get(streamId);
+      
       const iceCandidate = new RTCIceCandidate({
         candidate: event.candidate,
         sdpMLineIndex: event.sdpMLineIndex,
@@ -186,6 +193,12 @@ class BandwidthRtc {
     }
   }
 
+  private handleMediaServerResetEvent(notification: MediaServerResetEvent) {
+    if (this.mediaServerResetHandler) {
+      this.mediaServerResetHandler(notification);
+    }
+  }
+
   onSubscribe(callback: { (event: RtcStream): void }): void {
     this.subscribedHandler = callback;
   }
@@ -200,6 +213,10 @@ class BandwidthRtc {
 
   onRemoved(callback: { (): void }): void {
     this.removedHandler = callback;
+  }
+
+  onMediaServerReset(callback: { (event: MediaServerResetEvent): void }): void {
+    this.mediaServerResetHandler = callback;
   }
 
   onMessageReceived(callback: { (message: MessageReceivedEvent): void }): void {
@@ -386,11 +403,5 @@ class BandwidthRtc {
     this.localStreams = new Map();
   }
 }
-
-const sleep = (ms: number) => {
-  return new Promise((resolve, reject) => {
-    setTimeout(resolve, ms);
-  });
-};
 
 export default BandwidthRtc;
