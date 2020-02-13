@@ -64,6 +64,7 @@ class Signaling extends EventEmitter {
 
   disconnect() {
     if (this.ws) {
+      this.ws.removeAllListeners();
       this.ws.close();
       this.ws = null;
     }
