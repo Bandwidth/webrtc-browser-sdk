@@ -18,7 +18,6 @@ const RTC_CONFIGURATION: RTCConfiguration = {
 };
 
 class BandwidthRtc {
-  BandwidthRtc() {}
 
   // Signaling
   private signaling: Signaling = new Signaling();
@@ -75,7 +74,7 @@ class BandwidthRtc {
     this.signaling.addListener(
       "mediaServerReset",
       this.handleMediaServerResetEvent.bind(this)
-    )
+    );
     return this.signaling.connect(authParams, options);
   }
 
