@@ -48,6 +48,7 @@ class BandwidthRtc {
   }
 
   connect(authParams: RtcAuthParams, options?: RtcOptions) {
+    this.signaling = new Signaling();
     this.conferenceId = authParams.conferenceId;
     this.participantId = authParams.participantId;
     this.signaling.addListener(
@@ -66,10 +67,7 @@ class BandwidthRtc {
       "unpublished",
       this.handleUnpublishedEvent.bind(this)
     );
-    this.signaling.addListener(
-      "removed",
-      this.handleRemovedEvent.bind(this)
-    );
+    this.signaling.addListener("removed", this.handleRemovedEvent.bind(this));
     return this.signaling.connect(authParams, options);
   }
 
