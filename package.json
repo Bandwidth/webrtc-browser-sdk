@@ -1,6 +1,6 @@
 {
   "name": "@bandwidth/webrtc-browser-sdk",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "SDK for Bandwidth WebRTC Browser Applications",
   "main": "dist/index.js",
   "scripts": {
