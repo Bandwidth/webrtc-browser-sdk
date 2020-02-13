@@ -117,7 +117,7 @@ class BandwidthRtc {
       offerToReceiveAudio: true,
       offerToReceiveVideo: true
     };
-    if (mediaType == MediaType.AUDIO) {
+    if (mediaType === MediaType.AUDIO) {
       offerOptions.offerToReceiveVideo = false;
     }
 
