@@ -49,6 +49,7 @@ class BandwidthRtc {
   }
 
   connect(authParams: RtcAuthParams, options?: RtcOptions) {
+    this.signaling = new Signaling();
     this.conferenceId = authParams.conferenceId;
     this.participantId = authParams.participantId;
     this.signaling.addListener(
