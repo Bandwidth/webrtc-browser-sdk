@@ -37,7 +37,7 @@ class Signaling extends EventEmitter {
       ws.addListener("unsubscribed", event => this.emit("unsubscribed", event));
       ws.addListener("unpublished", event => this.emit("unpublished", event));
       ws.addListener("removed", () => this.emit("removed"));
-      ws.addListener("mediaServerReset", () => this.emit("mediaServerReset", event));
+      ws.addListener("mediaServerReset", event => this.emit("mediaServerReset", event));
       ws.addListener("onIceCandidate", event => this.emit("onIceCandidate", event));
 
       ws.on("open", () => {
