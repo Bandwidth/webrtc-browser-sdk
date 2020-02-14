@@ -9,7 +9,6 @@ test('test constructor', () => {
 
 test('test connect', () => {
     const bandwidthRtc = new BandwidthRtc();
-    bandwidthRtc.signaling.connect = jest.fn();
     const authParams = {
         conferenceId: 'foo',
         participantId: 'bar'
@@ -17,7 +16,12 @@ test('test connect', () => {
     const options = {
         websocketUrl: 'huh://not.real.url.becaused.its.mocked'
     };
+
+    bandwidthRtc.createSignalingBroker = jest.fn();
+    bandwidthRtc.signaling.addListener = jest.fn();
+    bandwidthRtc.signaling.connect = jest.fn();
     bandwidthRtc.connect(authParams, options);
+
     expect(bandwidthRtc.conferenceId).toBe('foo');
     expect(bandwidthRtc.participantId).toBe('bar');
     expect(bandwidthRtc.onIceCandidateHandler).toBeInstanceOf(Function);

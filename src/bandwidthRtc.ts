@@ -49,9 +49,12 @@ class BandwidthRtc {
   }
 
   connect(authParams: RtcAuthParams, options?: RtcOptions) {
-    this.signaling = new Signaling();
+
     this.conferenceId = authParams.conferenceId;
     this.participantId = authParams.participantId;
+
+    this.createSignalingBroker()
+
     this.signaling.addListener(
       "onIceCandidate",
       this.onIceCandidateHandler.bind(this)
@@ -76,7 +79,12 @@ class BandwidthRtc {
       "mediaServerReset",
       this.handleMediaServerResetEvent.bind(this)
     );
+
     return this.signaling.connect(authParams, options);
+  }
+
+  private createSignalingBroker() {
+    this.signaling = new Signaling();
   }
 
   private onIceCandidateHandler(event: OnIceCandidateEvent) {
