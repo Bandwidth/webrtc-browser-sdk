@@ -365,7 +365,6 @@ class BandwidthRtc {
   }
 
   setCameraEnabled(enabled: boolean, streamId?: string) {
-    console.log(`setting camera enabled: ${enabled}`);
     if (streamId) {
       this.localStreams
         .get(streamId)
