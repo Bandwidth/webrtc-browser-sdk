@@ -17,8 +17,6 @@ const RTC_CONFIGURATION: RTCConfiguration = {
 };
 
 class BandwidthRtc {
-  BandwidthRtc() {}
-
   // Signaling
   private signaling: Signaling = new Signaling();
 
@@ -67,8 +65,16 @@ class BandwidthRtc {
       "unpublished",
       this.handleUnpublishedEvent.bind(this)
     );
-    this.signaling.addListener("removed", this.handleRemovedEvent.bind(this));
-    return this.signaling.connect(authParams, options);
+    this.signaling.addListener(
+      "removed",
+      this.handleRemovedEvent.bind(this)
+    );
+    return this.connectAndJoin(authParams, options);
+  }
+
+  private async connectAndJoin(authParams: RtcAuthParams, options?: RtcOptions) {
+    await this.signaling.connect(authParams, options);
+    await this.signaling.join();
   }
 
   private onIceCandidateHandler(event: OnIceCandidateEvent) {
