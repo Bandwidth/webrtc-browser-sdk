@@ -69,7 +69,7 @@ class BandwidthRtc {
       "removed",
       this.handleRemovedEvent.bind(this)
     );
-    this.connectAndJoin(authParams, options);
+    return this.connectAndJoin(authParams, options);
   }
 
   private async connectAndJoin(authParams: RtcAuthParams, options?: RtcOptions) {
