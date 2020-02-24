@@ -4,7 +4,7 @@
   "description": "SDK for Bandwidth WebRTC Browser Applications",
   "main": "dist/index.js",
   "scripts": {
-    "build": "rm -rf ./dist/* && ./node_modules/typescript/bin/tsc",
+    "build": "jest && rm -rf ./dist/* && ./node_modules/typescript/bin/tsc",
     "test": "jest"
   },
   "repository": {
