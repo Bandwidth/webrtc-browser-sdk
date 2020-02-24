@@ -18,7 +18,6 @@ const RTC_CONFIGURATION: RTCConfiguration = {
 };
 
 class BandwidthRtc {
-
   // Signaling
   private signaling: Signaling = new Signaling();
 
@@ -79,8 +78,12 @@ class BandwidthRtc {
       "mediaServerReset",
       this.handleMediaServerResetEvent.bind(this)
     );
+    return this.connectAndJoin(authParams, options);
+  }
 
-    return this.signaling.connect(authParams, options);
+  private async connectAndJoin(authParams: RtcAuthParams, options?: RtcOptions) {
+    await this.signaling.connect(authParams, options);
+    await this.signaling.join();
   }
 
   private createSignalingBroker() {
@@ -392,7 +395,6 @@ class BandwidthRtc {
   }
 
   setCameraEnabled(enabled: boolean, streamId?: string) {
-    console.log(`setting camera enabled: ${enabled}`);
     if (streamId) {
       this.localStreams
         .get(streamId)

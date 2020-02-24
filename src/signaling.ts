@@ -4,12 +4,13 @@ import { Client as JsonRpcClient } from "rpc-websockets";
 import {
   RtcAuthParams,
   RtcOptions,
+  JoinResponse,
   SubscribeResponse,
   PublishResponse
 } from "./types";
 
 class Signaling extends EventEmitter {
-  // Websocket
+
   private defaultWebsocketUrl: string = "wss://device.webrtc.bandwidth.com";
   private ws: JsonRpcClient | null = null;
   private pingInterval?: NodeJS.Timeout;
@@ -70,6 +71,10 @@ class Signaling extends EventEmitter {
     if (this.pingInterval) {
       clearInterval(this.pingInterval);
     }
+  }
+
+  join(): Promise<JoinResponse> {
+    return this.ws?.call("joinParticipant", {}) as Promise<JoinResponse>;
   }
 
   publish(sdpOffer: string): Promise<PublishResponse> {

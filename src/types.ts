@@ -7,6 +7,9 @@ export interface RtcOptions {
   websocketUrl?: string;
 }
 
+export interface JoinResponse {
+}
+
 export interface SubscribeRequest {
   streamId: string;
   sdpOffer: string;
