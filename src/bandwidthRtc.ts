@@ -64,12 +64,12 @@ class BandwidthRtc {
       this.handleSubscribeCommand.bind(this)
     );
     this.signaling.addListener(
-      "unsubscribed",
-      this.handleUnsubscribedEvent.bind(this)
-    );
-    this.signaling.addListener(
       "unpublished",
       this.handleUnpublishedEvent.bind(this)
+    );
+    this.signaling.addListener(
+      "unsubscribed",
+      this.handleUnsubscribedEvent.bind(this)
     );
     this.signaling.addListener(
       "removed",

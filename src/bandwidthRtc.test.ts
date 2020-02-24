@@ -25,6 +25,7 @@ test('test connect', () => {
     expect(bandwidthRtc.onIceCandidateHandler).toBeInstanceOf(Function);
     expect(bandwidthRtc.handlePublishCommand).toBeInstanceOf(Function);
     expect(bandwidthRtc.handleSubscribeCommand).toBeInstanceOf(Function);
+    expect(bandwidthRtc.handleUnpublishedEvent).toBeInstanceOf(Function);
     expect(bandwidthRtc.handleUnsubscribedEvent).toBeInstanceOf(Function);
     expect(bandwidthRtc.handleRemovedEvent).toBeInstanceOf(Function);
     expect(bandwidthRtc.signaling.connect).toBeCalledTimes(1);
