@@ -42,11 +42,6 @@ export interface UnpublishedEvent {
   streamId: string;
 }
 
-export interface MediaServerResetEvent {
-  streamId: string;
-  message: string;
-}
-
 export interface OnIceCandidateEvent {
   streamId: string;
   candidate: string;

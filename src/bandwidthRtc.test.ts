@@ -28,7 +28,6 @@ test('test connect', () => {
     expect(bandwidthRtc.handleSubscribeEvent).toBeInstanceOf(Function);
     expect(bandwidthRtc.handleUnsubscribedEvent).toBeInstanceOf(Function);
     expect(bandwidthRtc.handleRemovedEvent).toBeInstanceOf(Function);
-    expect(bandwidthRtc.handleMediaServerResetEvent).toBeInstanceOf(Function);
     expect(bandwidthRtc.signaling.connect).toBeCalledTimes(1);
     expect(bandwidthRtc.signaling.connect).toBeCalledWith(authParams, options);
 });
