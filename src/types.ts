@@ -33,7 +33,15 @@ export interface RtcStream {
   mediaStream: MediaStream;
 }
 
-export interface SubscriptionEvent {
+export interface PublishCommand {
+}
+
+export interface SubscribeCommand {
+  mediaType?: MediaType;
+  streamId?: string;
+}
+
+export interface UnsubscribedEvent {
   mediaType: MediaType;
   streamId: string;
 }

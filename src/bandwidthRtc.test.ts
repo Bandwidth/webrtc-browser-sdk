@@ -22,10 +22,9 @@ test('test connect', () => {
     bandwidthRtc.signaling.connect = jest.fn();
     bandwidthRtc.connect(authParams, options);
 
-    expect(bandwidthRtc.conferenceId).toBe('foo');
-    expect(bandwidthRtc.participantId).toBe('bar');
     expect(bandwidthRtc.onIceCandidateHandler).toBeInstanceOf(Function);
-    expect(bandwidthRtc.handleSubscribeEvent).toBeInstanceOf(Function);
+    expect(bandwidthRtc.handlePublishCommand).toBeInstanceOf(Function);
+    expect(bandwidthRtc.handleSubscribeCommand).toBeInstanceOf(Function);
     expect(bandwidthRtc.handleUnsubscribedEvent).toBeInstanceOf(Function);
     expect(bandwidthRtc.handleRemovedEvent).toBeInstanceOf(Function);
     expect(bandwidthRtc.signaling.connect).toBeCalledTimes(1);
