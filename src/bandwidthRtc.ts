@@ -65,14 +65,14 @@ class BandwidthRtc {
       "unpublished",
       this.handleUnpublishedEvent.bind(this)
     );
-    this.signaling.addListener(
-      "removed",
-      this.handleRemovedEvent.bind(this)
-    );
+    this.signaling.addListener("removed", this.handleRemovedEvent.bind(this));
     return this.connectAndJoin(authParams, options);
   }
 
-  private async connectAndJoin(authParams: RtcAuthParams, options?: RtcOptions) {
+  private async connectAndJoin(
+    authParams: RtcAuthParams,
+    options?: RtcOptions
+  ) {
     await this.signaling.connect(authParams, options);
     await this.signaling.join();
   }
@@ -225,9 +225,21 @@ class BandwidthRtc {
     }
   }
 
-  async publish(constraints?: MediaStreamConstraints): Promise<RtcStream> {
-    if (!constraints) {
-      constraints = { audio: true, video: true };
+  async publish(mediaStream: MediaStream): Promise<RtcStream>;
+  async publish(constraints?: MediaStreamConstraints): Promise<RtcStream>;
+  async publish(
+    input: MediaStreamConstraints | MediaStream | undefined
+  ): Promise<RtcStream> {
+    let localMediaStream: MediaStream;
+    let constraints: MediaStreamConstraints = { audio: true, video: true };
+
+    if (input instanceof MediaStream) {
+      localMediaStream = input;
+    } else {
+      if (typeof input === "object") {
+        constraints = input as MediaStreamConstraints;
+      }
+      localMediaStream = await navigator.mediaDevices.getUserMedia(constraints);
     }
 
     let mediaType = MediaType.ALL;
@@ -240,11 +252,7 @@ class BandwidthRtc {
       }
     }
 
-    const localMediaStream = await navigator.mediaDevices.getUserMedia(
-      constraints
-    );
     const localPeerConnection = new RTCPeerConnection(RTC_CONFIGURATION);
-
     localMediaStream.getTracks().forEach(track => {
       localPeerConnection.addTrack(track, localMediaStream);
     });
