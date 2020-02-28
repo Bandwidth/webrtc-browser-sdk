@@ -27,6 +27,7 @@ export enum MediaType {
   DATA = "data"
 }
 
+// this is used as the event for subscribedHandler, and for other purposes
 export interface RtcStream {
   streamId: string;
   mediaType: MediaType;
@@ -42,6 +43,11 @@ export interface SubscribeCommand {
 }
 
 export interface UnsubscribedEvent {
+  mediaType: MediaType;
+  streamId: string;
+}
+// this is an alias for UnsubscribedEvent, keeping for backward compat, TODO, remove
+export interface SubscriptionEvent {
   mediaType: MediaType;
   streamId: string;
 }

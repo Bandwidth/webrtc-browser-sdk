@@ -2,8 +2,8 @@ require("webrtc-adapter");
 import {
   MediaType,
   MessageReceivedEvent,
-  PublishCommand,
   OnIceCandidateEvent,
+  PublishCommand,
   RtcAuthParams,
   RtcOptions,
   RtcStream,
@@ -37,8 +37,8 @@ class BandwidthRtc {
   publishCommandHandler?: { (event: PublishCommand): void };
   subscribeCommandHandler?: { (event: SubscribeCommand): void };
   subscribedHandler?: { (event: RtcStream): void };
-  unsubscribedHandler?: { (event: UnsubscribedEvent): void };
   unpublishedHandler?: { (event: UnpublishedEvent): void };
+  unsubscribedHandler?: { (event: UnsubscribedEvent): void };
   removedHandler?: { (): void };
   messageReceivedHandler?: { (message: MessageReceivedEvent): void };
 
@@ -117,25 +117,31 @@ class BandwidthRtc {
   }
 
   private handleSubscribeCommand(command: SubscribeCommand) {
-    if (command.streamId && command.mediaType) {
-      this.subscribeToStream(command.streamId, command.mediaType);
-    } else {
-      this.resubscribeToAllStreams()
-    }
-  }
-
-  private async resubscribeToAllStreams() {
-    // resubscribe to existing known streams
-    for (const streamId in this.remotePeerConnections.keys) {
-      let mediaType = this.remoteMediaTypes.get(streamId);
+    let resubscribe = false;
+    const streamId = command.streamId;
+    let mediaType = command.mediaType;
+    if (streamId) {
+      if (!mediaType) {
+        // if we don't have a media type this is a resubscribe
+        resubscribe = true;
+        // Get the mediaType from the existing set of remote stream media types
+        mediaType = this.remoteMediaTypes.get(streamId);
+      }
       if (mediaType) {
+        if (resubscribe) {
+          // unsubscribe from the existing stream
+          this.handleUnsubscribedEvent({streamId: streamId, mediaType: mediaType});
+        }
         this.subscribeToStream(streamId, mediaType);
+        if (this.subscribeCommandHandler) {
+          this.subscribeCommandHandler(command);
+        }
       }
     }
   }
 
   private async subscribeToStream(streamId: string, mediaType: MediaType) {
-    // We have been instructed by Bandwidth to subscribe to this stream
+    // subscribe to this stream
 
     // Create a new RTC Peer to handle receiving this stream
     const remotePeerConnection = new RTCPeerConnection(RTC_CONFIGURATION);
@@ -224,7 +230,21 @@ class BandwidthRtc {
     }
   }
 
+  onPublishCommand(callback: { (event: PublishCommand): void }): void {
+    this.publishCommandHandler = callback;
+  }
+
+  onSubscribeCommand(callback: { (event: SubscribeCommand): void }): void {
+    this.subscribeCommandHandler = callback;
+  }
+
   onSubscribe(callback: { (event: RtcStream): void }): void {
+    // TODO: remove once all browser clients are using onSubscribed()
+    this.subscribedHandler = callback;
+  }
+  onSubscribed(callback: { (event: RtcStream): void }): void {
+    // onSubscribed replaces onSubscribe. It is a better name which reflects the past tense of the event,
+    // use the same name pattern as other onX..ed() events.
     this.subscribedHandler = callback;
   }
 
@@ -263,6 +283,9 @@ class BandwidthRtc {
     // reset publishing
     this.unpublish();
     this.publish();
+    if (this.publishCommandHandler) {
+      this.publishCommandHandler(command);
+    }
   }
 
   async publish(constraints?: MediaStreamConstraints): Promise<RtcStream> {
