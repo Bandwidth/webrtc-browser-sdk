@@ -69,7 +69,10 @@ class BandwidthRtc {
     return this.connectAndJoin(authParams, options);
   }
 
-  private async connectAndJoin(authParams: RtcAuthParams, options?: RtcOptions) {
+  private async connectAndJoin(
+    authParams: RtcAuthParams,
+    options?: RtcOptions
+  ) {
     await this.signaling.connect(authParams, options);
     await this.signaling.join();
   }
@@ -272,13 +275,23 @@ class BandwidthRtc {
     }
   }
 
-  async publish(constraints?: MediaStreamConstraints): Promise<RtcStream> {
-    if (!constraints) {
-      constraints = { audio: true, video: true };
-    }
-    const localMediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-    const localPeerConnection = new RTCPeerConnection(RTC_CONFIGURATION);
+  async publish(mediaStream: MediaStream): Promise<RtcStream>;
+  async publish(constraints?: MediaStreamConstraints): Promise<RtcStream>;
+  async publish(input: MediaStreamConstraints | MediaStream | undefined): Promise<RtcStream> {
 
+    let localMediaStream: MediaStream;
+    let constraints: MediaStreamConstraints = { audio: true, video: true };
+
+    if (input instanceof MediaStream) {
+      localMediaStream = input;
+    } else {
+      if (typeof input === "object") {
+        constraints = input as MediaStreamConstraints;
+      }
+      localMediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+    }
+
+    const localPeerConnection = new RTCPeerConnection(RTC_CONFIGURATION);
     localMediaStream.getTracks().forEach(track => {
       localPeerConnection.addTrack(track, localMediaStream);
     });
@@ -321,7 +334,7 @@ class BandwidthRtc {
       let mediaType = MediaType.ALL;
       if (constraints.audio && !constraints.video) {
         mediaType = MediaType.AUDIO;
-      } else {
+      } else if (!constraints.audio && constraints.video) {
         mediaType = MediaType.VIDEO;
       }
       return {
@@ -329,6 +342,7 @@ class BandwidthRtc {
         mediaStream: localMediaStream,
         mediaType: mediaType
       };
+
     } catch (e) {
       if (String(e.message).toLowerCase().includes("sdp")) {
         throw new SdpOfferRejectedError(e.message);
