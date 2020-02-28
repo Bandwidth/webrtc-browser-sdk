@@ -34,19 +34,24 @@ export interface RtcStream {
   mediaStream: MediaStream;
 }
 
-export interface PublishCommand {
+export interface RepublishEvent {
+  streamId: string;
 }
 
-export interface SubscribeCommand {
+export interface ResubscribeEvent {
   mediaType?: MediaType;
-  streamId?: string;
+  streamId: string;
 }
 
+export interface SubscribeEvent {
+  mediaType: MediaType;
+  streamId: string;
+}
 export interface UnsubscribedEvent {
   mediaType: MediaType;
   streamId: string;
 }
-// this is an alias for UnsubscribedEvent, keeping for backward compat, TODO, remove
+// this is an alias for SubscribeEvent and UnsubscribedEvent, keeping for backward compat, TODO, remove
 export interface SubscriptionEvent {
   mediaType: MediaType;
   streamId: string;

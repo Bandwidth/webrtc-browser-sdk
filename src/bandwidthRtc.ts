@@ -3,12 +3,13 @@ import {
   MediaType,
   MessageReceivedEvent,
   OnIceCandidateEvent,
-  PublishCommand,
+  RepublishEvent,
+  ResubscribeEvent,
   RtcAuthParams,
   RtcOptions,
   RtcStream,
   SdpOfferRejectedError,
-  SubscribeCommand,
+  SubscribeEvent,
   UnpublishedEvent,
   UnsubscribedEvent
 } from "./types";
@@ -34,11 +35,11 @@ class BandwidthRtc {
   private remoteMediaTypes: Map<string, MediaType> = new Map();
 
   // Event handlers
-  publishCommandHandler?: { (event: PublishCommand): void };
-  subscribeCommandHandler?: { (event: SubscribeCommand): void };
   subscribedHandler?: { (event: RtcStream): void };
-  unpublishedHandler?: { (event: UnpublishedEvent): void };
   unsubscribedHandler?: { (event: UnsubscribedEvent): void };
+  unpublishedHandler?: { (event: UnpublishedEvent): void };
+  republishHandler?: { (event: RepublishEvent): void };
+  resubscribeHandler?: { (event: ResubscribeEvent): void };
   removedHandler?: { (): void };
   messageReceivedHandler?: { (message: MessageReceivedEvent): void };
 
@@ -51,30 +52,19 @@ class BandwidthRtc {
 
     this.createSignalingBroker()
 
-    this.signaling.addListener(
-      "onIceCandidate",
-      this.onIceCandidateHandler.bind(this)
-    );
-    this.signaling.addListener(
-      "publish",
-      this.handlePublishCommand.bind(this)
-    );
-    this.signaling.addListener(
-      "subscribe",
-      this.handleSubscribeCommand.bind(this)
-    );
-    this.signaling.addListener(
-      "unpublished",
-      this.handleUnpublishedEvent.bind(this)
-    );
-    this.signaling.addListener(
-      "unsubscribed",
-      this.handleUnsubscribedEvent.bind(this)
-    );
-    this.signaling.addListener(
-      "removed",
-      this.handleRemovedEvent.bind(this)
-    );
+    this.signaling.addListener("onIceCandidate", this.handleIceCandidateEvent.bind(this));
+
+    this.signaling.addListener("subscribe", this.handleSubscribeEvent.bind(this));
+
+    this.signaling.addListener("unsubscribed", this.handleUnsubscribedEvent.bind(this));
+    
+    this.signaling.addListener("unpublished", this.handleUnpublishedEvent.bind(this));
+
+    this.signaling.addListener("republish", this.handleRepublishEvent.bind(this));
+
+    this.signaling.addListener("resubscribe", this.handleResubscribeEvent.bind(this));
+
+    this.signaling.addListener("removed", this.handleRemovedEvent.bind(this));
   
     return this.connectAndJoin(authParams, options);
   }
@@ -88,7 +78,7 @@ class BandwidthRtc {
     this.signaling = new Signaling();
   }
 
-  private onIceCandidateHandler(event: OnIceCandidateEvent) {
+  private handleIceCandidateEvent(event: OnIceCandidateEvent) {
     const streamId = event.streamId;
     if (streamId) {
       const rtcPeerConnection =
@@ -116,32 +106,10 @@ class BandwidthRtc {
     }
   }
 
-  private handleSubscribeCommand(command: SubscribeCommand) {
-    let resubscribe = false;
-    const streamId = command.streamId;
-    let mediaType = command.mediaType;
-    if (streamId) {
-      if (!mediaType) {
-        // if we don't have a media type this is a resubscribe
-        resubscribe = true;
-        // Get the mediaType from the existing set of remote stream media types
-        mediaType = this.remoteMediaTypes.get(streamId);
-      }
-      if (mediaType) {
-        if (resubscribe) {
-          // unsubscribe from the existing stream
-          this.handleUnsubscribedEvent({streamId: streamId, mediaType: mediaType});
-        }
-        this.subscribeToStream(streamId, mediaType);
-        if (this.subscribeCommandHandler) {
-          this.subscribeCommandHandler(command);
-        }
-      }
-    }
-  }
-
-  private async subscribeToStream(streamId: string, mediaType: MediaType) {
+  private async handleSubscribeEvent(event: SubscribeEvent) {
     // subscribe to this stream
+    const streamId = event.streamId;
+    const mediaType = event.mediaType;
 
     // Create a new RTC Peer to handle receiving this stream
     const remotePeerConnection = new RTCPeerConnection(RTC_CONFIGURATION);
@@ -221,6 +189,31 @@ class BandwidthRtc {
     }
   }
 
+  private async handleRepublishEvent(event: RepublishEvent) {
+    // reset publishing
+    this.unpublish();
+    this.publish();
+    if (this.republishHandler) {
+      this.republishHandler(event);
+    }
+  }
+
+  private handleResubscribeEvent(event: ResubscribeEvent) {
+    const streamId = event.streamId;
+    if (streamId) {
+      // Get the mediaType from the existing set of remote stream media types
+      const mediaType = this.remoteMediaTypes.get(streamId);
+      if (mediaType) {
+        // unsubscribe from the existing stream
+        this.handleUnsubscribedEvent({streamId: streamId, mediaType: mediaType});
+        this.handleSubscribeEvent({streamId: streamId, mediaType: mediaType});
+        if (this.resubscribeHandler) {
+          this.resubscribeHandler(event);
+        }
+      }
+    }
+  }
+
   private handleRemovedEvent() {
     this.cleanupLocalStreams();
     this.cleanupRemoteStreams();
@@ -230,12 +223,12 @@ class BandwidthRtc {
     }
   }
 
-  onPublishCommand(callback: { (event: PublishCommand): void }): void {
-    this.publishCommandHandler = callback;
+  onRepublish(callback: { (event: RepublishEvent): void }): void {
+    this.republishHandler = callback;
   }
 
-  onSubscribeCommand(callback: { (event: SubscribeCommand): void }): void {
-    this.subscribeCommandHandler = callback;
+  onResubscribe(callback: { (event: ResubscribeEvent): void }): void {
+    this.resubscribeHandler = callback;
   }
 
   onSubscribe(callback: { (event: RtcStream): void }): void {
@@ -276,15 +269,6 @@ class BandwidthRtc {
       this.localStreams.forEach(stream => {
         stream.getTracks().forEach(track => track.stop());
       });
-    }
-  }
-
-  private async handlePublishCommand(command: PublishCommand) {
-    // reset publishing
-    this.unpublish();
-    this.publish();
-    if (this.publishCommandHandler) {
-      this.publishCommandHandler(command);
     }
   }
 
