@@ -193,9 +193,20 @@ class BandwidthRtc {
   }
 
   private async handleRepublishEvent(event: RepublishEvent) {
-    // reset publishing
-    this.unpublish();
-    this.publish();
+
+    this.unpublish(event.streamId);
+
+    if (event.streamId) {
+      const localMediaStream = this.localStreams.get(event.streamId)
+      if (localMediaStream) {
+        this.publish(localMediaStream);
+      } else {
+        this.publish()
+      }
+    } else {
+      this.publish()
+    }
+
     if (this.republishHandler) {
       this.republishHandler(event);
     }
