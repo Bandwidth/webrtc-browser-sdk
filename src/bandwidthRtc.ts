@@ -196,15 +196,18 @@ class BandwidthRtc {
 
     this.unpublish(event.streamId);
 
+    // TODO: detect current mic and camera usage, and pass these as constraints,
+    // but for now, republish with audio and video off, for safety sake
+    const constraints = { audio: false, video: false }
     if (event.streamId) {
       const localMediaStream = this.localStreams.get(event.streamId)
       if (localMediaStream) {
         this.publish(localMediaStream);
       } else {
-        this.publish()
+        this.publish(constraints)
       }
     } else {
-      this.publish()
+      this.publish(constraints)
     }
 
     if (this.republishHandler) {
