@@ -110,6 +110,7 @@ class BandwidthRtc {
   }
 
   private async handleSubscribeEvent(event: SubscribeEvent) {
+
     // subscribe to this stream
     const streamId = event.streamId;
     const mediaType = event.mediaType;
@@ -178,34 +179,31 @@ class BandwidthRtc {
     return offerOptions;
   }
 
-  private handleUnsubscribedEvent(notification: UnsubscribedEvent) {
-    this.cleanupRemoteStreams(notification.streamId);
+  private handleUnsubscribedEvent(event: UnsubscribedEvent) {
+    this.cleanupRemoteStreams(event.streamId);
     if (this.unsubscribedHandler) {
-      this.unsubscribedHandler(notification);
+      this.unsubscribedHandler(event);
     }
   }
 
-  private handleUnpublishedEvent(notification: UnpublishedEvent) {
-    this.cleanupLocalStreams(notification.streamId);
+  private handleUnpublishedEvent(event: UnpublishedEvent) {
+    this.cleanupLocalStreams(event.streamId);
     if (this.unpublishedHandler) {
-      this.unpublishedHandler(notification);
+      this.unpublishedHandler(event);
     }
   }
 
   private async handleRepublishEvent(event: RepublishEvent) {
 
-    this.unpublish(event.streamId);
-
     // TODO: detect current mic and camera usage, and pass these as constraints,
     // but for now, republish with audio and video off, for safety sake
     const constraints = { audio: false, video: false }
+    let localMediaStream;
     if (event.streamId) {
-      const localMediaStream = this.localStreams.get(event.streamId)
-      if (localMediaStream) {
-        this.publish(localMediaStream);
-      } else {
-        this.publish(constraints)
-      }
+      localMediaStream = this.localStreams.get(event.streamId)
+    }
+    if (localMediaStream) {
+      this.publish(localMediaStream);
     } else {
       this.publish(constraints)
     }
@@ -216,6 +214,7 @@ class BandwidthRtc {
   }
 
   private handleResubscribeEvent(event: ResubscribeEvent) {
+
     const streamId = event.streamId;
     if (streamId) {
       // Get the mediaType from the existing set of remote stream media types
@@ -223,7 +222,8 @@ class BandwidthRtc {
       if (mediaType) {
         // unsubscribe from the existing stream
         this.handleUnsubscribedEvent({streamId: streamId, mediaType: mediaType});
-        this.handleSubscribeEvent({streamId: streamId, mediaType: mediaType});
+        // then wait to be resubscribed to the equivalent (new/existing) stream
+
         if (this.resubscribeHandler) {
           this.resubscribeHandler(event);
         }
@@ -295,7 +295,6 @@ class BandwidthRtc {
 
     let localMediaStream: MediaStream;
     let constraints: MediaStreamConstraints = { audio: true, video: true };
-
     if (input instanceof MediaStream) {
       localMediaStream = input;
     } else {
