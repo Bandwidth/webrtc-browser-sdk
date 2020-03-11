@@ -32,6 +32,7 @@ class BandwidthRtc {
   // Bandwidth
   private conferenceId: string = "";
   private participantId: string = "";
+  private authKey: string = "";
 
   // Event handlers
   subscribedHandler?: { (event: RtcStream): void };
@@ -49,6 +50,7 @@ class BandwidthRtc {
     this.signaling = new Signaling();
     this.conferenceId = authParams.conferenceId;
     this.participantId = authParams.participantId;
+    this.authKey = authParams.authKey;
     this.signaling.addListener(
       "onIceCandidate",
       this.onIceCandidateHandler.bind(this)
