@@ -50,7 +50,7 @@ class BandwidthRtc {
 
   connect(authParams: RtcAuthParams, options?: RtcOptions) {
 
-    this.createSignalingBroker()
+    this.createSignalingBroker();
 
     this.signaling.addListener("onIceCandidate", this.handleIceCandidateEvent.bind(this));
 
@@ -249,12 +249,13 @@ class BandwidthRtc {
   }
 
   onSubscribe(callback: { (event: RtcStream): void }): void {
-    // TODO: remove once all browser clients are using onSubscribed()
+    // TODO: create a better name for this onX function, which means "this browser is being requested to subscribe"
+    // and make consistent with the name used for the xHandler callback here.
     this.subscribedHandler = callback;
   }
   onSubscribed(callback: { (event: RtcStream): void }): void {
-    // onSubscribed replaces onSubscribe. It is a better name which reflects the past tense of the event,
-    // use the same name pattern as other onX..ed() events.
+    // onSubscribed is an alternative name for onSubscribe.
+    // This alias, expressed in past tense, uses the same name pattern as other onX..ed() events.
     this.subscribedHandler = callback;
   }
 
