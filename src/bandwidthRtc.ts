@@ -253,11 +253,6 @@ class BandwidthRtc {
     // and make consistent with the name used for the xHandler callback here.
     this.subscribedHandler = callback;
   }
-  onSubscribed(callback: { (event: RtcStream): void }): void {
-    // onSubscribed is an alternative name for onSubscribe.
-    // This alias, expressed in past tense, uses the same name pattern as other onX..ed() events.
-    this.subscribedHandler = callback;
-  }
 
   onUnsubscribed(callback: { (event: UnsubscribedEvent): void }): void {
     this.unsubscribedHandler = callback;
