@@ -1,14 +1,17 @@
 require("webrtc-adapter");
 import {
+  MediaType,
+  MessageReceivedEvent,
+  OnIceCandidateEvent,
+  RepublishEvent,
+  ResubscribeEvent,
   RtcAuthParams,
   RtcOptions,
-  OnIceCandidateEvent,
-  SubscriptionEvent,
-  UnpublishedEvent,
-  MediaType,
+  RtcStream,
   SdpOfferRejectedError,
-  MessageReceivedEvent,
-  RtcStream
+  SubscribeEvent,
+  UnpublishedEvent,
+  UnsubscribedEvent
 } from "./types";
 import Signaling from "./signaling";
 
@@ -17,6 +20,7 @@ const RTC_CONFIGURATION: RTCConfiguration = {
 };
 
 class BandwidthRtc {
+
   // Signaling
   private signaling: Signaling = new Signaling();
 
@@ -28,15 +32,14 @@ class BandwidthRtc {
   private remotePeerConnections: Map<string, RTCPeerConnection> = new Map();
   private iceCandidateQueues: Map<string, OnIceCandidateEvent[]> = new Map();
   private remoteDataChannels: Map<string, RTCDataChannel> = new Map();
-
-  // Bandwidth
-  private conferenceId: string = "";
-  private participantId: string = "";
+  private remoteMediaTypes: Map<string, MediaType> = new Map();
 
   // Event handlers
   subscribedHandler?: { (event: RtcStream): void };
-  unsubscribedHandler?: { (event: SubscriptionEvent): void };
+  unsubscribedHandler?: { (event: UnsubscribedEvent): void };
   unpublishedHandler?: { (event: UnpublishedEvent): void };
+  republishHandler?: { (event: RepublishEvent): void };
+  resubscribeHandler?: { (event: ResubscribeEvent): void };
   removedHandler?: { (): void };
   messageReceivedHandler?: { (message: MessageReceivedEvent): void };
 
@@ -46,26 +49,23 @@ class BandwidthRtc {
   }
 
   connect(authParams: RtcAuthParams, options?: RtcOptions) {
-    this.signaling = new Signaling();
-    this.conferenceId = authParams.conferenceId;
-    this.participantId = authParams.participantId;
-    this.signaling.addListener(
-      "onIceCandidate",
-      this.onIceCandidateHandler.bind(this)
-    );
-    this.signaling.addListener(
-      "subscribe",
-      this.handleSubscribeEvent.bind(this)
-    );
-    this.signaling.addListener(
-      "unsubscribed",
-      this.handleUnsubscribedEvent.bind(this)
-    );
-    this.signaling.addListener(
-      "unpublished",
-      this.handleUnpublishedEvent.bind(this)
-    );
+
+    this.createSignalingBroker();
+
+    this.signaling.addListener("onIceCandidate", this.handleIceCandidateEvent.bind(this));
+
+    this.signaling.addListener("subscribe", this.handleSubscribeEvent.bind(this));
+
+    this.signaling.addListener("unsubscribed", this.handleUnsubscribedEvent.bind(this));
+    
+    this.signaling.addListener("unpublished", this.handleUnpublishedEvent.bind(this));
+
+    this.signaling.addListener("republish", this.handleRepublishEvent.bind(this));
+
+    this.signaling.addListener("resubscribe", this.handleResubscribeEvent.bind(this));
+
     this.signaling.addListener("removed", this.handleRemovedEvent.bind(this));
+  
     return this.connectAndJoin(authParams, options);
   }
 
@@ -77,12 +77,17 @@ class BandwidthRtc {
     await this.signaling.join();
   }
 
-  private onIceCandidateHandler(event: OnIceCandidateEvent) {
+  private createSignalingBroker() {
+    this.signaling = new Signaling();
+  }
+
+  private handleIceCandidateEvent(event: OnIceCandidateEvent) {
     const streamId = event.streamId;
     if (streamId) {
       const rtcPeerConnection =
         this.remotePeerConnections.get(streamId) ||
         this.localPeerConnections.get(streamId);
+      
       const iceCandidate = new RTCIceCandidate({
         candidate: event.candidate,
         sdpMLineIndex: event.sdpMLineIndex,
@@ -104,20 +109,15 @@ class BandwidthRtc {
     }
   }
 
-  private async handleSubscribeEvent(notification: SubscriptionEvent) {
-    // We have been instructed by Bandwidth to subscribe to a stream
-    const streamId = notification.streamId;
-    const mediaType = notification.mediaType;
+  private async handleSubscribeEvent(event: SubscribeEvent) {
+
+    // subscribe to this stream
+    const streamId = event.streamId;
+    const mediaType = event.mediaType;
+
     // Create a new RTC Peer to handle receiving this stream
     const remotePeerConnection = new RTCPeerConnection(RTC_CONFIGURATION);
     const remoteDataChannel = remotePeerConnection.createDataChannel(streamId);
-    const offerOptions = {
-      offerToReceiveAudio: true,
-      offerToReceiveVideo: true
-    };
-    if (mediaType === MediaType.AUDIO) {
-      offerOptions.offerToReceiveVideo = false;
-    }
 
     remotePeerConnection.onicecandidate = event =>
       this.signaling.sendIceCandidate(streamId, event.candidate, "subscribe");
@@ -141,6 +141,7 @@ class BandwidthRtc {
       }
     };
 
+    const offerOptions = this.getOfferOptions(mediaType);
     let localOffer = await remotePeerConnection.createOffer(offerOptions);
     if (!localOffer.sdp) {
       throw new Error("Created offer with no SDP");
@@ -153,6 +154,7 @@ class BandwidthRtc {
       type: "answer",
       sdp: result.sdpAnswer
     });
+
     let queuedRemoteCandidates = this.iceCandidateQueues.get(streamId);
     if (queuedRemoteCandidates) {
       queuedRemoteCandidates.forEach(candidate => {
@@ -163,21 +165,69 @@ class BandwidthRtc {
 
     this.remotePeerConnections.set(streamId, remotePeerConnection);
     this.remoteDataChannels.set(streamId, remoteDataChannel);
+    this.remoteMediaTypes.set(streamId, mediaType);
   }
 
-  private handleUnsubscribedEvent(notification: SubscriptionEvent) {
-    const streamId = notification.streamId;
-    this.cleanupRemoteStreams(streamId);
+  private getOfferOptions(mediaType: MediaType) {
+    const offerOptions = {
+      offerToReceiveAudio: true,
+      offerToReceiveVideo: true
+    };
+    if (mediaType === MediaType.AUDIO) {
+      offerOptions.offerToReceiveVideo = false;
+    }
+    return offerOptions;
+  }
+
+  private handleUnsubscribedEvent(event: UnsubscribedEvent) {
+    this.cleanupRemoteStreams(event.streamId);
     if (this.unsubscribedHandler) {
-      this.unsubscribedHandler(notification);
+      this.unsubscribedHandler(event);
     }
   }
 
-  private handleUnpublishedEvent(notification: UnpublishedEvent) {
-    const streamId = notification.streamId;
-    this.cleanupLocalStreams(streamId);
+  private handleUnpublishedEvent(event: UnpublishedEvent) {
+    this.cleanupLocalStreams(event.streamId);
     if (this.unpublishedHandler) {
-      this.unpublishedHandler(notification);
+      this.unpublishedHandler(event);
+    }
+  }
+
+  private async handleRepublishEvent(event: RepublishEvent) {
+
+    // TODO: detect current mic and camera usage, and pass these as constraints,
+    // but for now, republish with audio and video off, for safety sake
+    const constraints = { audio: false, video: false };
+    let localMediaStream;
+    if (event.streamId) {
+      localMediaStream = this.localStreams.get(event.streamId);
+    }
+    if (localMediaStream) {
+      this.publish(localMediaStream);
+    } else {
+      this.publish(constraints);
+    }
+
+    if (this.republishHandler) {
+      this.republishHandler(event);
+    }
+  }
+
+  private handleResubscribeEvent(event: ResubscribeEvent) {
+
+    const streamId = event.streamId;
+    if (streamId) {
+      // Get the mediaType from the existing set of remote stream media types
+      const mediaType = this.remoteMediaTypes.get(streamId);
+      if (mediaType) {
+        // unsubscribe from the existing stream
+        this.handleUnsubscribedEvent({streamId: streamId, mediaType: mediaType});
+        // then wait to be resubscribed to the equivalent (new/existing) stream
+
+        if (this.resubscribeHandler) {
+          this.resubscribeHandler(event);
+        }
+      }
     }
   }
 
@@ -190,11 +240,21 @@ class BandwidthRtc {
     }
   }
 
+  onRepublish(callback: { (event: RepublishEvent): void }): void {
+    this.republishHandler = callback;
+  }
+
+  onResubscribe(callback: { (event: ResubscribeEvent): void }): void {
+    this.resubscribeHandler = callback;
+  }
+
   onSubscribe(callback: { (event: RtcStream): void }): void {
+    // TODO: create a better name for this onX function, which means "this browser is being requested to subscribe"
+    // and make consistent with the name used for the xHandler callback here.
     this.subscribedHandler = callback;
   }
 
-  onUnsubscribed(callback: { (event: SubscriptionEvent): void }): void {
+  onUnsubscribed(callback: { (event: UnsubscribedEvent): void }): void {
     this.unsubscribedHandler = callback;
   }
 
@@ -227,12 +287,10 @@ class BandwidthRtc {
 
   async publish(mediaStream: MediaStream): Promise<RtcStream>;
   async publish(constraints?: MediaStreamConstraints): Promise<RtcStream>;
-  async publish(
-    input: MediaStreamConstraints | MediaStream | undefined
-  ): Promise<RtcStream> {
+  async publish(input: MediaStreamConstraints | MediaStream | undefined): Promise<RtcStream> {
+
     let localMediaStream: MediaStream;
     let constraints: MediaStreamConstraints = { audio: true, video: true };
-
     if (input instanceof MediaStream) {
       localMediaStream = input;
     } else {
@@ -242,28 +300,17 @@ class BandwidthRtc {
       localMediaStream = await navigator.mediaDevices.getUserMedia(constraints);
     }
 
-    let mediaType = MediaType.ALL;
-
-    if (!constraints.audio && !constraints.video) {
-      if (constraints.audio) {
-        mediaType = MediaType.AUDIO;
-      } else {
-        mediaType = MediaType.VIDEO;
-      }
-    }
-
     const localPeerConnection = new RTCPeerConnection(RTC_CONFIGURATION);
     localMediaStream.getTracks().forEach(track => {
       localPeerConnection.addTrack(track, localMediaStream);
     });
 
-    const offerOptions = {
-      offerToReceiveAudio: false,
-      offerToReceiveVideo: false
-    };
     const localDataChannel = localPeerConnection.createDataChannel("default");
 
-    const localOffer = await localPeerConnection.createOffer(offerOptions);
+    const localOffer = await localPeerConnection.createOffer({
+      offerToReceiveAudio: false,
+      offerToReceiveVideo: false
+    });
     if (!localOffer.sdp) {
       throw new Error("Created offer with no SDP");
     }
@@ -293,17 +340,20 @@ class BandwidthRtc {
       this.localPeerConnections.set(streamId, localPeerConnection);
       this.localStreams.set(publishResponse.streamId, localMediaStream);
 
+      let mediaType = MediaType.ALL;
+      if (constraints.audio && !constraints.video) {
+        mediaType = MediaType.AUDIO;
+      } else if (!constraints.audio && constraints.video) {
+        mediaType = MediaType.VIDEO;
+      }
       return {
         streamId: publishResponse.streamId,
         mediaStream: localMediaStream,
         mediaType: mediaType
       };
+
     } catch (e) {
-      if (
-        String(e.message)
-          .toLowerCase()
-          .includes("sdp")
-      ) {
+      if (String(e.message).toLowerCase().includes("sdp")) {
         throw new SdpOfferRejectedError(e.message);
       } else {
         throw e;
@@ -315,7 +365,6 @@ class BandwidthRtc {
     if (streams.length === 0) {
       streams = Array.from(this.localStreams.keys());
     }
-
     for (const s of streams) {
       await this.signaling.unpublish(s);
       this.cleanupLocalStreams(s);
@@ -397,11 +446,5 @@ class BandwidthRtc {
     this.localStreams = new Map();
   }
 }
-
-const sleep = (ms: number) => {
-  return new Promise((resolve, reject) => {
-    setTimeout(resolve, ms);
-  });
-};
 
 export default BandwidthRtc;
