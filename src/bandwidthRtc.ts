@@ -141,7 +141,7 @@ class BandwidthRtc {
       }
     };
 
-    const offerOptions = this.getOfferOptions(mediaType)
+    const offerOptions = this.getOfferOptions(mediaType);
     let localOffer = await remotePeerConnection.createOffer(offerOptions);
     if (!localOffer.sdp) {
       throw new Error("Created offer with no SDP");
@@ -197,15 +197,15 @@ class BandwidthRtc {
 
     // TODO: detect current mic and camera usage, and pass these as constraints,
     // but for now, republish with audio and video off, for safety sake
-    const constraints = { audio: false, video: false }
+    const constraints = { audio: false, video: false };
     let localMediaStream;
     if (event.streamId) {
-      localMediaStream = this.localStreams.get(event.streamId)
+      localMediaStream = this.localStreams.get(event.streamId);
     }
     if (localMediaStream) {
       this.publish(localMediaStream);
     } else {
-      this.publish(constraints)
+      this.publish(constraints);
     }
 
     if (this.republishHandler) {
