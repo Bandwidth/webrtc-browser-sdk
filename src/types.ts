@@ -1,7 +1,7 @@
 export interface RtcAuthParams {
-  participantId: string;
   conferenceId: string;
-  authKey: string;
+  participantId: string;
+  deviceToken: string;
 }
 
 export interface RtcOptions {
