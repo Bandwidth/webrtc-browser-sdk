@@ -26,14 +26,11 @@ class Signaling extends EventEmitter {
       if (options) {
         rtcOptions = { ...rtcOptions, ...options };
       }
-      console.log(`${JSON.stringify(authParams)}`);
       const websocketUrl = `${rtcOptions.websocketUrl}/v1/?at=d&conferenceId=${authParams.conferenceId}&participantId=${authParams.participantId}&deviceToken=${authParams.deviceToken}&&sdkVersion=${sdkVersion}`;
-      console.log(`${websocketUrl}`);
       const ws = new JsonRpcClient(websocketUrl, {
         max_reconnects: 0 // Unlimited
       });
       this.ws = ws;
-      console.log("Opened websocket");
       ws.addListener("subscribe", event => this.emit("subscribe", event));
       ws.addListener("unsubscribed", event => this.emit("unsubscribed", event));
       ws.addListener("unpublished", event => this.emit("unpublished", event));
