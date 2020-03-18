@@ -11,7 +11,8 @@ test('test connect', () => {
     const bandwidthRtc = new BandwidthRtc();
     const authParams = {
         conferenceId: 'foo',
-        participantId: 'bar'
+        participantId: 'bar',
+        deviceToken:'biz'
     };
     const options = {
         websocketUrl: 'huh://not.real.url.becaused.its.mocked'
