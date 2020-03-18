@@ -42,10 +42,11 @@ class Signaling extends EventEmitter {
       ws.addListener("removed", () => this.emit("removed"));
       ws.addListener("onIceCandidate", event => this.emit("onIceCandidate", event));
 
-      ws.on("open", () => {
+      ws.on("open", async () => {
         this.pingInterval = setInterval(() => {
           ws.call("onTest", {});
         }, 300000);
+        await this.join();
         resolve();
       });
 
@@ -74,7 +75,7 @@ class Signaling extends EventEmitter {
     }
   }
 
-  join(): Promise<JoinResponse> {
+  private join(): Promise<JoinResponse> {
     return this.ws?.call("joinParticipant", {}) as Promise<JoinResponse>;
   }
 
