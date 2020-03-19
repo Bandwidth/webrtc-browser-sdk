@@ -34,9 +34,6 @@ class BandwidthRtc {
   private remoteDataChannels: Map<string, RTCDataChannel> = new Map();
 
   // Bandwidth
-  private conferenceId: string = "";
-  private participantId: string = "";
-  private deviceToken: string = "";
   private remoteMediaTypes: Map<string, MediaType> = new Map();
 
   // Event handlers
