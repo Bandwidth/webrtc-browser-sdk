@@ -26,7 +26,7 @@ class Signaling extends EventEmitter {
       if (options) {
         rtcOptions = { ...rtcOptions, ...options };
       }
-      const websocketUrl = `${rtcOptions.websocketUrl}/v1/?at=d&conferenceId=${authParams.conferenceId}&participantId=${authParams.participantId}&deviceToken=${authParams.deviceToken}&&sdkVersion=${sdkVersion}`;
+      const websocketUrl = `${rtcOptions.websocketUrl}/v1/?at=d&conferenceId=${authParams.conferenceId}&participantId=${authParams.participantId}&deviceToken=${authParams.deviceToken}&sdkVersion=${sdkVersion}`;
       const ws = new JsonRpcClient(websocketUrl, {
         max_reconnects: 0 // Unlimited
       });
