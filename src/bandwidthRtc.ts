@@ -106,8 +106,7 @@ class BandwidthRtc {
     const remotePeerConnection = new RTCPeerConnection(RTC_CONFIGURATION);
     const remoteDataChannel = remotePeerConnection.createDataChannel(streamId);
 
-    remotePeerConnection.onicecandidate = (event) =>
-      this.signaling.sendIceCandidate(streamId, event.candidate, "subscribe");
+    remotePeerConnection.onicecandidate = (event) => this.signaling.sendIceCandidate(streamId, event.candidate, "subscribe");
 
     remotePeerConnection.ontrack = (event) => {
       if (this.subscribedHandler) {
@@ -303,8 +302,7 @@ class BandwidthRtc {
       const publishResponse = await this.signaling.publish(localOffer.sdp);
       const streamId = publishResponse.streamId;
 
-      localPeerConnection.onicecandidate = (event) =>
-        this.signaling.sendIceCandidate(streamId, event.candidate, "publish");
+      localPeerConnection.onicecandidate = (event) => this.signaling.sendIceCandidate(streamId, event.candidate, "publish");
 
       await localPeerConnection.setLocalDescription(localOffer);
       await localPeerConnection.setRemoteDescription({
@@ -391,9 +389,7 @@ class BandwidthRtc {
 
   sendMessage(message: string, sourceStreamId?: string): void {
     // Send from the specified stream ID. If none specified, pick the first (not predictable) one in the map
-    const dataChannel = sourceStreamId
-      ? this.localDataChannels.get(sourceStreamId)
-      : this.localDataChannels.values().next().value;
+    const dataChannel = sourceStreamId ? this.localDataChannels.get(sourceStreamId) : this.localDataChannels.values().next().value;
     dataChannel?.send(message);
   }
 
