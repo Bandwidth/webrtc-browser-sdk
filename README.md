@@ -21,7 +21,7 @@ const bandwidthRtc = new BandwidthRtc();
 ```javascript
 await bandwidthRtc.connect({
   conferenceId: conferenceId,
-  participantId: participantId
+  participantId: participantId,
 });
 ```
 
@@ -45,7 +45,7 @@ let localStream: MediaStream = await bandwidthRtc.publish();
 ```javascript
 const mediaConstraints: MediaStreamConstraints = {
   audio: true,
-  video: false
+  video: false,
 };
 let localStream: MediaStream = await bandwidthRtc.publish(mediaConstraints);
 ```
@@ -62,15 +62,15 @@ const mediaConstraints: MediaStreamConstraints = {
     latency: 0.01,
     noiseSuppression: true,
     sampleRate: 48000,
-    sampleSize: 16
+    sampleSize: 16,
   },
   video: {
     aspectRatio: 1.3333333333333333,
     frameRate: 30,
     width: { min: 640, ideal: 1280 },
     height: { min: 480, ideal: 720 },
-    resizeMode: "none"
-  }
+    resizeMode: "none",
+  },
 };
 let localStream: MediaStream = await bandwidthRtc.publish(mediaConstraints);
 ```
@@ -89,8 +89,9 @@ Please see the following resources for more information on MediaStreamConstraint
 ### onUnpublished
 
 - Description: Listens for the unpublished event.
+
 ```javascript
-bandwidthRtc.onUnpublished(event => {
+bandwidthRtc.onUnpublished((event) => {
   console.log(`The stream ${event.streamId} has been unpublished.`);
 });
 ```
@@ -100,7 +101,7 @@ bandwidthRtc.onUnpublished(event => {
 - Description: Listens for the subscribe event.
 
 ```javascript
-bandwidthRtc.onSubscribe(event => {
+bandwidthRtc.onSubscribe((event) => {
   console.log(`The stream ${event.streamId} has been subscribed to.`);
 });
 ```
@@ -110,7 +111,7 @@ bandwidthRtc.onSubscribe(event => {
 - Descripton: Listens for the unsubscribed event.
 
 ```javascript
-bandwidthRtc.onUnsubscribed(event => {
+bandwidthRtc.onUnsubscribed((event) => {
   console.log(`The stream ${event.streamId} has been unsubscribed from.`);
 });
 ```
@@ -118,8 +119,9 @@ bandwidthRtc.onUnsubscribed(event => {
 ### onRemoved
 
 - Description: Listens for the removed from conference event.
+
 ```javascript
-bandwidth.onRemoved(event => {
+bandwidth.onRemoved((event) => {
   console.log(`Participant ${event.participantId} has been removed from the conference.`);
 });
 ```
@@ -129,7 +131,7 @@ bandwidth.onRemoved(event => {
 - Description: Listens for the conference ended event.
 
 ```javascript
-bandwidthRtc.onConferenceEnded(event => {
+bandwidthRtc.onConferenceEnded((event) => {
   console.log(`The conference ${event.conferenceId} ended.`);
 });
 ```
