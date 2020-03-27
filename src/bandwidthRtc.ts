@@ -66,15 +66,7 @@ class BandwidthRtc {
 
     this.signaling.addListener("removed", this.handleRemovedEvent.bind(this));
   
-    return this.connectAndJoin(authParams, options);
-  }
-
-  private async connectAndJoin(
-    authParams: RtcAuthParams,
-    options?: RtcOptions
-  ) {
-    await this.signaling.connect(authParams, options);
-    await this.signaling.join();
+    return this.signaling.connect(authParams, options);
   }
 
   private createSignalingBroker() {
