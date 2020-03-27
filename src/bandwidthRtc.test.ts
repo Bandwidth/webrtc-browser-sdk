@@ -10,8 +10,6 @@ test('test constructor', () => {
 test('test connect', () => {
     const bandwidthRtc = new BandwidthRtc();
     const authParams = {
-        conferenceId: 'foo',
-        participantId: 'bar',
         deviceToken:'biz'
     };
     const options = {
