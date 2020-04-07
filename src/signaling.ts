@@ -1,16 +1,9 @@
 const sdkVersion = require("../package.json").version;
 import { EventEmitter } from "events";
 import { Client as JsonRpcClient } from "rpc-websockets";
-import {
-  RtcAuthParams,
-  RtcOptions,
-  JoinResponse,
-  SubscribeResponse,
-  PublishResponse
-} from "./types";
+import { RtcAuthParams, RtcOptions, JoinResponse, SubscribeResponse, PublishResponse } from "./types";
 
 class Signaling extends EventEmitter {
-
   private defaultWebsocketUrl: string = "wss://device.webrtc.bandwidth.com";
   private ws: JsonRpcClient | null = null;
   private pingInterval?: NodeJS.Timeout;
@@ -20,7 +13,7 @@ class Signaling extends EventEmitter {
   connect(authParams: RtcAuthParams, options?: RtcOptions) {
     return new Promise((resolve, reject) => {
       let rtcOptions: RtcOptions = {
-        websocketUrl: this.defaultWebsocketUrl
+        websocketUrl: this.defaultWebsocketUrl,
       };
 
       if (options) {
@@ -30,17 +23,17 @@ class Signaling extends EventEmitter {
       const websocketUrl = `${rtcOptions.websocketUrl}/v1/?at=d&conferenceId=${authParams.conferenceId}&participantId=${authParams.participantId}&sdkVersion=${sdkVersion}`;
 
       const ws = new JsonRpcClient(websocketUrl, {
-        max_reconnects: 0 // Unlimited
+        max_reconnects: 0, // Unlimited
       });
       this.ws = ws;
 
-      ws.addListener("subscribe", event => this.emit("subscribe", event));
-      ws.addListener("unsubscribed", event => this.emit("unsubscribed", event));
-      ws.addListener("unpublished", event => this.emit("unpublished", event));
-      ws.addListener("republish", event => this.emit("republish", event));
-      ws.addListener("resubscribe", event => this.emit("resubscribe", event));
+      ws.addListener("subscribe", (event) => this.emit("subscribe", event));
+      ws.addListener("unsubscribed", (event) => this.emit("unsubscribed", event));
+      ws.addListener("unpublished", (event) => this.emit("unpublished", event));
+      ws.addListener("republish", (event) => this.emit("republish", event));
+      ws.addListener("resubscribe", (event) => this.emit("resubscribe", event));
       ws.addListener("removed", () => this.emit("removed"));
-      ws.addListener("onIceCandidate", event => this.emit("onIceCandidate", event));
+      ws.addListener("onIceCandidate", (event) => this.emit("onIceCandidate", event));
 
       ws.on("open", async () => {
         this.pingInterval = setInterval(() => {
@@ -50,13 +43,13 @@ class Signaling extends EventEmitter {
         resolve();
       });
 
-      ws.on("error", error => {
+      ws.on("error", (error) => {
         if (this.pingInterval) {
           clearInterval(this.pingInterval);
         }
       });
 
-      ws.on("close", code => {
+      ws.on("close", (code) => {
         if (this.pingInterval) {
           clearInterval(this.pingInterval);
         }
@@ -81,28 +74,24 @@ class Signaling extends EventEmitter {
 
   publish(sdpOffer: string): Promise<PublishResponse> {
     return this.ws?.call("publishMedia", {
-      sdpOffer: sdpOffer
+      sdpOffer: sdpOffer,
     }) as Promise<PublishResponse>;
   }
 
   unpublish(streamId: string) {
     return this.ws?.call("unpublishMedia", {
-      streamId: streamId
+      streamId: streamId,
     });
   }
 
   subscribe(streamId: string, sdpOffer: string): Promise<SubscribeResponse> {
     return this.ws?.call("subscribeMedia", {
       streamId: streamId,
-      sdpOffer: sdpOffer
+      sdpOffer: sdpOffer,
     }) as Promise<SubscribeResponse>;
   }
 
-  sendIceCandidate(
-    streamId: string,
-    candidate: RTCIceCandidate | null,
-    candidateType: string
-  ) {
+  sendIceCandidate(streamId: string, candidate: RTCIceCandidate | null, candidateType: string) {
     if (candidate) {
       let missingFields = [];
       if (candidate.sdpMid && candidate.sdpMLineIndex != null) {
@@ -111,7 +100,7 @@ class Signaling extends EventEmitter {
           candidateType: candidateType,
           candidate: candidate.candidate,
           sdpMid: candidate.sdpMid,
-          sdpMLineIndex: candidate.sdpMLineIndex
+          sdpMLineIndex: candidate.sdpMLineIndex,
         };
         this.ws?.call("onIceCandidate", params);
       }
