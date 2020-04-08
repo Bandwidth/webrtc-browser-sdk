@@ -4,7 +4,7 @@
   "description": "SDK for Bandwidth WebRTC Browser Applications",
   "main": "dist/index.js",
   "scripts": {
-    "build": "jest && rm -rf ./dist/* && ./node_modules/typescript/bin/tsc",
+    "build": "jest && rm -rf ./dist/* && prettier --check  . && ./node_modules/typescript/bin/tsc",
     "test": "jest"
   },
   "repository": {
@@ -26,6 +26,7 @@
     "@types/node": "^13.5.1",
     "babel-jest": "^25.1.0",
     "jest": "^25.1.0",
+    "prettier": "^2.0.2",
     "ts-node": "8.6.2",
     "typedoc": "^0.16.9",
     "typescript": "3.7.5"

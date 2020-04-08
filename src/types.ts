@@ -6,8 +6,7 @@ export interface RtcOptions {
   websocketUrl?: string;
 }
 
-export interface JoinResponse {
-}
+export interface JoinResponse {}
 
 export interface SubscribeRequest {
   streamId: string;
@@ -23,7 +22,7 @@ export enum MediaType {
   ALL = "all",
   AUDIO = "audio",
   VIDEO = "video",
-  DATA = "data"
+  DATA = "data",
 }
 
 // this is used as the event for subscribedHandler, and for other purposes
