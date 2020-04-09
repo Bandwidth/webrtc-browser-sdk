@@ -19,7 +19,7 @@ export default class AudioLevelDetector extends EventEmitter {
   private maxEmitInterval: number = 500; // ms;
   private analyzerNode: AnalyserNode;
   private currentAudioLevel: AudioLevel = AudioLevel.SILENT;
-  private previousAudioLevel: AudioLevel = AudioLevel.SILENT;
+  private previousAudioLevel: AudioLevel | undefined;
 
   constructor(config: AudioLevelDetectorOptions) {
     super();
@@ -53,39 +53,51 @@ export default class AudioLevelDetector extends EventEmitter {
     setInterval(this.analyze.bind(this), this.sampleInterval);
   }
 
-  private analyze() {
+  analyze() {
     const bufferLength = this.analyzerNode.fftSize;
     const dataArray = new Uint8Array(bufferLength);
-    const now = Date.now();
-    const elapsedTime = now - this.start;
     this.analyzerNode.getByteTimeDomainData(dataArray);
     // Iterate over each of the samples
     for (let i = 0; i < bufferLength; i++) {
-      // Normalize between 0 and 1
-      const sampleValue = Math.abs(dataArray[i] / 128 - 1.0);
-      if (sampleValue < this.silenceAmplitudeThreshold) {
-        if (elapsedTime > this.timeThreshold) {
-          // Not speaking
-          if (this.currentAudioLevel !== AudioLevel.SILENT) {
-            this.currentAudioLevel = AudioLevel.SILENT;
-          }
+      const sampleValue = this.normalizeSample(dataArray[i]);
+      this.analyzeSample(sampleValue);
+      this.emitCurrentAudioLevel();
+    }
+  }
+
+  normalizeSample(sample: number) {
+    return sample / 128;
+  }
+
+  analyzeSample(normalizedSample: number) {
+    const now = Date.now();
+    const elapsedTime = now - this.start;
+    if (normalizedSample < this.silenceAmplitudeThreshold) {
+      if (elapsedTime > this.timeThreshold) {
+        // Not speaking
+        if (this.currentAudioLevel !== AudioLevel.SILENT) {
+          this.currentAudioLevel = AudioLevel.SILENT;
         }
-      } else if (sampleValue >= this.highAmplitudeThreshold) {
-        // Speaking loudly
-        this.start = now;
-        this.currentAudioLevel = AudioLevel.HIGH;
-      } else {
-        // Speaking softly
-        this.start = now;
-        this.currentAudioLevel = AudioLevel.LOW;
       }
-      if (this.previousAudioLevel !== this.currentAudioLevel) {
-        // Allow emitting "high" sooner
-        if (now - this.lastEmitTime > this.maxEmitInterval || this.currentAudioLevel === AudioLevel.HIGH) {
-          this.emit("audioLevelChange", this.currentAudioLevel);
-          this.lastEmitTime = now;
-          this.previousAudioLevel = this.currentAudioLevel;
-        }
+    } else if (normalizedSample >= this.highAmplitudeThreshold) {
+      // Speaking loudly
+      this.start = now;
+      this.currentAudioLevel = AudioLevel.HIGH;
+    } else {
+      // Speaking softly
+      this.start = now;
+      this.currentAudioLevel = AudioLevel.LOW;
+    }
+  }
+
+  emitCurrentAudioLevel() {
+    const now = Date.now();
+    if (this.previousAudioLevel !== this.currentAudioLevel) {
+      // Allow emitting "high" sooner
+      if (now - this.lastEmitTime > this.maxEmitInterval || this.currentAudioLevel === AudioLevel.HIGH) {
+        this.emit("audioLevelChange", this.currentAudioLevel);
+        this.lastEmitTime = now;
+        this.previousAudioLevel = this.currentAudioLevel;
       }
     }
   }
