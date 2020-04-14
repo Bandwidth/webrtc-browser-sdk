@@ -1,6 +1,6 @@
 import { AudioLevel } from "./types";
 import AudioLevelDetector from "./audioLevelDetector";
-import { sleep } from "./utils";
+import { sleep } from "./time";
 
 type fakeMediaStream = MediaStream;
 
@@ -52,7 +52,7 @@ test("test emit low", () => {
     timeThreshold: timeThreshold,
   });
   audioLevelDetector.on("audioLevelChange", spy);
-  audioLevelDetector.analyzeSample(audioLevelDetector.normalizeSample(33)); // LOW
+  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(64)); // LOW
   audioLevelDetector.emitCurrentAudioLevel();
   expect(spy).toHaveBeenCalledWith(AudioLevel.LOW);
 });
@@ -65,7 +65,7 @@ test("test emit high", () => {
     timeThreshold: timeThreshold,
   });
   audioLevelDetector.on("audioLevelChange", spy);
-  audioLevelDetector.analyzeSample(audioLevelDetector.normalizeSample(128)); // HIGH
+  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(256)); // HIGH
   audioLevelDetector.emitCurrentAudioLevel();
   expect(spy).toHaveBeenCalledWith(AudioLevel.HIGH);
 });
@@ -78,10 +78,10 @@ test("test immediate transition from low to high", () => {
     timeThreshold: timeThreshold,
   });
   audioLevelDetector.on("audioLevelChange", spy);
-  audioLevelDetector.analyzeSample(audioLevelDetector.normalizeSample(33)); // LOW
+  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(64)); // LOW
   audioLevelDetector.emitCurrentAudioLevel();
   expect(spy).toHaveBeenCalledWith(AudioLevel.LOW);
-  audioLevelDetector.analyzeSample(audioLevelDetector.normalizeSample(128)); // HIGH
+  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(256)); // HIGH
   audioLevelDetector.emitCurrentAudioLevel();
   expect(spy).toHaveBeenCalledWith(AudioLevel.HIGH);
 });
@@ -94,10 +94,10 @@ test("test emit silent after time threshold", async (done) => {
     timeThreshold: timeThreshold,
   });
   audioLevelDetector.on("audioLevelChange", spy);
-  audioLevelDetector.analyzeSample(audioLevelDetector.normalizeSample(33)); // LOW
-  audioLevelDetector.analyzeSample(audioLevelDetector.normalizeSample(128)); // HIGH
+  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(64)); // LOW
+  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(256)); // HIGH
   await sleep(timeThreshold + 5);
-  audioLevelDetector.analyzeSample(audioLevelDetector.normalizeSample(0));
+  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(0));
   audioLevelDetector.emitCurrentAudioLevel();
   expect(spy).toHaveBeenLastCalledWith(AudioLevel.SILENT);
   done();

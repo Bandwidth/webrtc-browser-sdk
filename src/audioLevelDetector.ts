@@ -4,7 +4,8 @@ import { AudioLevel } from "./types";
 export interface AudioLevelDetectorOptions {
   mediaStream: MediaStream;
   timeThreshold?: number;
-  amplitudeThreshold?: number;
+  silenceAmplitudeThreshold?: number;
+  highAmplitudeThreshold?: number;
   sampleInterval?: number;
   maxEmitInterval?: number;
 }
@@ -17,30 +18,35 @@ export default class AudioLevelDetector extends EventEmitter {
   private highAmplitudeThreshold = 0.5;
   private sampleInterval: number = 100; // ms
   private maxEmitInterval: number = 500; // ms;
-  private analyzerNode: AnalyserNode;
+  private analyserNode: AnalyserNode;
   private currentAudioLevel: AudioLevel = AudioLevel.SILENT;
   private previousAudioLevel: AudioLevel | undefined;
 
   constructor(config: AudioLevelDetectorOptions) {
     super();
 
-    const context = new AudioContext();
-
-    if (config.amplitudeThreshold) {
-      this.silenceAmplitudeThreshold = config.amplitudeThreshold;
-    }
     if (config.timeThreshold) {
       this.timeThreshold = config.timeThreshold;
     }
-    if (config.maxEmitInterval) {
-      this.maxEmitInterval = config.maxEmitInterval;
+    if (config.silenceAmplitudeThreshold) {
+      this.silenceAmplitudeThreshold = config.silenceAmplitudeThreshold;
+    }
+    if (config.highAmplitudeThreshold) {
+      this.highAmplitudeThreshold = config.highAmplitudeThreshold;
     }
     if (config.sampleInterval) {
       this.sampleInterval = config.sampleInterval;
     }
+    if (config.maxEmitInterval) {
+      this.maxEmitInterval = config.maxEmitInterval;
+    }
 
-    // Chrome hack
+    // Assigning the media stream as the srcObject of an Audio element
+    // is required by Chrome in some circumstances to actually start
+    // the audio flowing through the Web Audio API nodes
     new Audio().srcObject = config.mediaStream;
+
+    const context = new AudioContext();
     const source = context.createMediaStreamSource(config.mediaStream);
     const analyser = context.createAnalyser();
     analyser.fftSize = 2048;
@@ -48,28 +54,30 @@ export default class AudioLevelDetector extends EventEmitter {
     analyser.maxDecibels = -10;
     analyser.smoothingTimeConstant = 0.85;
     source.connect(analyser);
-    this.analyzerNode = analyser;
+    this.analyserNode = analyser;
 
-    setInterval(this.analyze.bind(this), this.sampleInterval);
+    setInterval(this.analyse.bind(this), this.sampleInterval);
   }
 
-  analyze() {
-    const bufferLength = this.analyzerNode.fftSize;
+  analyse() {
+    const bufferLength = this.analyserNode.fftSize;
     const dataArray = new Uint8Array(bufferLength);
-    this.analyzerNode.getByteTimeDomainData(dataArray);
+    this.analyserNode.getByteTimeDomainData(dataArray);
     // Iterate over each of the samples
     for (let i = 0; i < bufferLength; i++) {
       const sampleValue = this.normalizeSample(dataArray[i]);
-      this.analyzeSample(sampleValue);
+      this.analyseSample(sampleValue);
       this.emitCurrentAudioLevel();
     }
   }
 
   normalizeSample(sample: number) {
-    return sample / 128;
+    // Normalize the sample between 0 - 1
+    // Samples are originally in a Uint8Array so they are 0-256
+    return sample / 256;
   }
 
-  analyzeSample(normalizedSample: number) {
+  analyseSample(normalizedSample: number) {
     const now = Date.now();
     const elapsedTime = now - this.start;
     if (normalizedSample < this.silenceAmplitudeThreshold) {
