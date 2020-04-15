@@ -7,14 +7,14 @@ test("test constructor", () => {
   expect(bandwidthRtc.setCameraEnabled).toBeInstanceOf(Function);
 });
 
-test('test connect', () => {
-    const bandwidthRtc = new BandwidthRtc();
-    const authParams = {
-        deviceToken:'biz'
-    };
-    const options = {
-        websocketUrl: 'huh://not.real.url.becaused.its.mocked'
-    };
+test("test connect", () => {
+  const bandwidthRtc = new BandwidthRtc();
+  const authParams = {
+    deviceToken: "biz",
+  };
+  const options = {
+    websocketUrl: "huh://not.real.url.becaused.its.mocked",
+  };
 
   bandwidthRtc.createSignalingBroker = jest.fn();
   bandwidthRtc.signaling.addListener = jest.fn();
