@@ -31,6 +31,7 @@ class BandwidthRtc {
   private remotePeerConnections: Map<string, RTCPeerConnection> = new Map();
   private iceCandidateQueues: Map<string, OnIceCandidateEvent[]> = new Map();
   private remoteDataChannels: Map<string, RTCDataChannel> = new Map();
+
   private remoteMediaTypes: Map<string, MediaType> = new Map();
 
   // Event handlers

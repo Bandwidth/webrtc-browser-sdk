@@ -19,19 +19,16 @@ class Signaling extends EventEmitter {
       if (options) {
         rtcOptions = { ...rtcOptions, ...options };
       }
-
-      const websocketUrl = `${rtcOptions.websocketUrl}/v1/?at=d&conferenceId=${authParams.conferenceId}&participantId=${authParams.participantId}&sdkVersion=${sdkVersion}`;
-
+      const websocketUrl = `${rtcOptions.websocketUrl}/v1/?at=d&deviceToken=${authParams.deviceToken}&sdkVersion=${sdkVersion}`;
       const ws = new JsonRpcClient(websocketUrl, {
         max_reconnects: 0, // Unlimited
       });
       this.ws = ws;
-
-      ws.addListener("subscribe", (event) => this.emit("subscribe", event));
-      ws.addListener("unsubscribed", (event) => this.emit("unsubscribed", event));
-      ws.addListener("unpublished", (event) => this.emit("unpublished", event));
-      ws.addListener("republish", (event) => this.emit("republish", event));
-      ws.addListener("resubscribe", (event) => this.emit("resubscribe", event));
+      ws.addListener("subscribe", event => this.emit("subscribe", event));
+      ws.addListener("unsubscribed", event => this.emit("unsubscribed", event));
+      ws.addListener("unpublished", event => this.emit("unpublished", event));
+      ws.addListener("republish", event => this.emit("republish", event));
+      ws.addListener("resubscribe", event => this.emit("resubscribe", event));
       ws.addListener("removed", () => this.emit("removed"));
       ws.addListener("onIceCandidate", (event) => this.emit("onIceCandidate", event));
 
