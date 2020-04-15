@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "jest && rm -rf ./dist/* && prettier --check  . && ./node_modules/typescript/bin/tsc",
-    "test": "jest"
+    "test": "jest --coverage",
+    "test:debug": "node --inspect node_modules/.bin/jest --runInBand --coverage ."
   },
   "repository": {
     "type": "git",

@@ -12,8 +12,10 @@ import {
   SubscribeEvent,
   UnpublishedEvent,
   UnsubscribedEvent,
+  AudioLevelChangeHandler,
 } from "./types";
 import Signaling from "./signaling";
+import AudioLevelDetector from "./audioLevelDetector";
 
 const RTC_CONFIGURATION: RTCConfiguration = {
   iceServers: [],
@@ -270,9 +272,9 @@ class BandwidthRtc {
     }
   }
 
-  async publish(mediaStream: MediaStream): Promise<RtcStream>;
-  async publish(constraints?: MediaStreamConstraints): Promise<RtcStream>;
-  async publish(input: MediaStreamConstraints | MediaStream | undefined): Promise<RtcStream> {
+  async publish(mediaStream: MediaStream, audioLevelChangeHandler?: AudioLevelChangeHandler): Promise<RtcStream>;
+  async publish(constraints?: MediaStreamConstraints, audioLevelChangeHandler?: AudioLevelChangeHandler): Promise<RtcStream>;
+  async publish(input: MediaStreamConstraints | MediaStream | undefined, audioLevelChangeHandler?: AudioLevelChangeHandler): Promise<RtcStream> {
     let localMediaStream: MediaStream;
     let constraints: MediaStreamConstraints = { audio: true, video: true };
     if (input instanceof MediaStream) {
@@ -282,6 +284,13 @@ class BandwidthRtc {
         constraints = input as MediaStreamConstraints;
       }
       localMediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+    }
+
+    if (audioLevelChangeHandler) {
+      const audioLevelDetector = new AudioLevelDetector({
+        mediaStream: localMediaStream,
+      });
+      audioLevelDetector.on("audioLevelChange", audioLevelChangeHandler);
     }
 
     const localPeerConnection = new RTCPeerConnection(RTC_CONFIGURATION);

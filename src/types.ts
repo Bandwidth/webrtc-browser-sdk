@@ -25,6 +25,14 @@ export enum MediaType {
   DATA = "data",
 }
 
+export enum AudioLevel {
+  SILENT = "silent",
+  LOW = "low",
+  HIGH = "high",
+}
+
+export type AudioLevelChangeHandler = { (audioLevel: AudioLevel): void };
+
 // this is used as the event for subscribedHandler, and for other purposes
 export interface RtcStream {
   streamId: string;
