@@ -52,7 +52,7 @@ test("test emit low", () => {
     timeThreshold: timeThreshold,
   });
   audioLevelDetector.on("audioLevelChange", spy);
-  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(64)); // LOW
+  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(154)); // LOW
   audioLevelDetector.emitCurrentAudioLevel();
   expect(spy).toHaveBeenCalledWith(AudioLevel.LOW);
 });
@@ -78,7 +78,7 @@ test("test immediate transition from low to high", () => {
     timeThreshold: timeThreshold,
   });
   audioLevelDetector.on("audioLevelChange", spy);
-  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(64)); // LOW
+  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(154)); // LOW
   audioLevelDetector.emitCurrentAudioLevel();
   expect(spy).toHaveBeenCalledWith(AudioLevel.LOW);
   audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(256)); // HIGH
@@ -94,10 +94,10 @@ test("test emit silent after time threshold", async (done) => {
     timeThreshold: timeThreshold,
   });
   audioLevelDetector.on("audioLevelChange", spy);
-  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(64)); // LOW
+  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(154)); // LOW
   audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(256)); // HIGH
   await sleep(timeThreshold + 5);
-  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(0));
+  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(128)); // SILENT
   audioLevelDetector.emitCurrentAudioLevel();
   expect(spy).toHaveBeenLastCalledWith(AudioLevel.SILENT);
   done();

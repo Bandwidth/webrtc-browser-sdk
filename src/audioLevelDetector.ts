@@ -74,7 +74,8 @@ export default class AudioLevelDetector extends EventEmitter {
   normalizeSample(sample: number) {
     // Normalize the sample between 0 - 1
     // Samples are originally in a Uint8Array so they are 0-256
-    return sample / 256;
+    // We also need to invert out of phase samples
+    return Math.abs(sample / 128 - 1);
   }
 
   analyseSample(normalizedSample: number) {
