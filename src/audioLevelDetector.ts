@@ -80,8 +80,6 @@ export default class AudioLevelDetector extends EventEmitter {
    * @returns The amplitude of the audio sample, in the range of 0 - 1
    */
   normalizeSample(sample: number) {
-    // Normalize the sample between 0 - 1
-    // We also need to invert out of phase samples
     return Math.abs(sample / 128 - 1);
   }
 
