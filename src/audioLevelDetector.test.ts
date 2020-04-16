@@ -18,6 +18,13 @@ const realInterval = setInterval;
 const realAudioContext = global.AudioContext;
 const mockInterval = setInterval(() => {}, 0);
 
+// Un-normalized sample values are centered on 128, so 128 is silent
+const SILENT_SAMPLE_VALUE = 128;
+// 154 is "20.03% louder" than "silent" so it should be just above the noise suppression threshold
+const LOW_SAMPLE_VALUE = 154;
+// 256 is the maximum amplitude that can be measured by the Web Audio API
+const HIGH_SAMPLE_VALUE = 256;
+
 beforeAll(() => {
   //@ts-ignore
   global.AudioContext = MockAudioContext;
@@ -52,7 +59,7 @@ test("test emit low", () => {
     timeThreshold: timeThreshold,
   });
   audioLevelDetector.on("audioLevelChange", spy);
-  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(154)); // LOW
+  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(LOW_SAMPLE_VALUE));
   audioLevelDetector.emitCurrentAudioLevel();
   expect(spy).toHaveBeenCalledWith(AudioLevel.LOW);
 });
@@ -65,7 +72,7 @@ test("test emit high", () => {
     timeThreshold: timeThreshold,
   });
   audioLevelDetector.on("audioLevelChange", spy);
-  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(256)); // HIGH
+  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(HIGH_SAMPLE_VALUE));
   audioLevelDetector.emitCurrentAudioLevel();
   expect(spy).toHaveBeenCalledWith(AudioLevel.HIGH);
 });
@@ -78,10 +85,10 @@ test("test immediate transition from low to high", () => {
     timeThreshold: timeThreshold,
   });
   audioLevelDetector.on("audioLevelChange", spy);
-  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(154)); // LOW
+  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(LOW_SAMPLE_VALUE));
   audioLevelDetector.emitCurrentAudioLevel();
   expect(spy).toHaveBeenCalledWith(AudioLevel.LOW);
-  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(256)); // HIGH
+  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(HIGH_SAMPLE_VALUE));
   audioLevelDetector.emitCurrentAudioLevel();
   expect(spy).toHaveBeenCalledWith(AudioLevel.HIGH);
 });
@@ -94,10 +101,10 @@ test("test emit silent after time threshold", async (done) => {
     timeThreshold: timeThreshold,
   });
   audioLevelDetector.on("audioLevelChange", spy);
-  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(154)); // LOW
-  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(256)); // HIGH
+  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(LOW_SAMPLE_VALUE));
+  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(HIGH_SAMPLE_VALUE));
   await sleep(timeThreshold + 5);
-  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(128)); // SILENT
+  audioLevelDetector.analyseSample(audioLevelDetector.normalizeSample(SILENT_SAMPLE_VALUE));
   audioLevelDetector.emitCurrentAudioLevel();
   expect(spy).toHaveBeenLastCalledWith(AudioLevel.SILENT);
   done();
