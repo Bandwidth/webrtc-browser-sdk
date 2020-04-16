@@ -1,12 +1,12 @@
 {
   "name": "@bandwidth/webrtc-browser-sdk",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "SDK for Bandwidth WebRTC Browser Applications",
   "main": "dist/index.js",
   "scripts": {
-    "build": "jest && rm -rf ./dist/* && prettier --check  . && ./node_modules/typescript/bin/tsc",
-    "test": "jest --coverage",
-    "test:debug": "node --inspect node_modules/.bin/jest --runInBand --coverage ."
+    "build": "jest src && rm -rf ./dist/* && prettier --check  . && ./node_modules/typescript/bin/tsc",
+    "test": "jest src --coverage",
+    "test:debug": "node --inspect node_modules/.bin/jest --runInBand --coverage src"
   },
   "repository": {
     "type": "git",

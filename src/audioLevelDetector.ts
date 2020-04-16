@@ -71,10 +71,16 @@ export default class AudioLevelDetector extends EventEmitter {
     }
   }
 
+  /**
+   * Normalizes the amplitude of Uint8Array audio samples into the range of 0 - 1
+   * Samples are originally in the range of 0-256, where the midpoint of 128 is
+   * silent and the values in either direction are progressively loud, into an
+   * equivalent value between 0 and 1, where 0 is silent and 1 is maximally loud.
+   * @param sample The unsigned integer sample
+   * @returns The amplitude of the audio sample, in the range of 0 - 1
+   */
   normalizeSample(sample: number) {
-    // Normalize the sample between 0 - 1
-    // Samples are originally in a Uint8Array so they are 0-256
-    return sample / 256;
+    return Math.abs(sample / 128 - 1);
   }
 
   analyseSample(normalizedSample: number) {
